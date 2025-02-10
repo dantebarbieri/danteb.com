@@ -1,13 +1,47 @@
 <script lang="ts">
-	import type { PageProps } from './$types';
+	import type { ContainerInfo } from 'dockerode';
 
-	let { data }: PageProps = $props();
+	let containerUpdates: ContainerInfo[] = [];
+
+	const eventSource = new EventSource('/api/sse/docker');
+
+	eventSource.onmessage = (event: MessageEvent<string>) => {
+		try {
+			const data = JSON.parse(event.data) as ContainerInfo[];
+			containerUpdates = data;
+			console.log(containerUpdates);
+		} catch (err) {
+			console.error('Error parsing SSE data:', err);
+		}
+	};
+
+	eventSource.onerror = (error: Event) => {
+		console.error('EventSource error:', error);
+	};
 </script>
 
-<h1>Services</h1>
-
-<ul>
-	{#each data.summaries as { slug, title, status }}
-		<li><a href="/service/{slug}">{title}</a> <span>{status}</span></li>
-	{/each}
-</ul>
+<h1>Docker Container Updates</h1>
+{#if containerUpdates && containerUpdates.length > 0}
+	<table>
+		<thead>
+			<tr>
+				<th>Container</th>
+				<th>Status</th>
+			</tr>
+		</thead>
+		<tbody>
+			{#each containerUpdates as container}
+				<tr>
+					<td
+						><a href="/service/{container.Id}"
+							>{container.Names.map((name) => name.replace(/^\//, '')).join(', ')}</a
+						></td
+					>
+					<td>{container.Status}</td>
+				</tr>
+			{/each}
+		</tbody>
+	</table>
+{:else}
+	<p>No container data available.</p>
+{/if}
