@@ -1,26 +1,30 @@
 <script lang="ts">
-	import { onDestroy } from 'svelte';
+	import { onMount } from 'svelte';
 	import type { ContainerInfo } from 'dockerode';
 
 	let containerUpdates = $state<ContainerInfo[]>([]);
 
-	const eventSource = new EventSource('/api/sse/docker');
+	let eventSource: EventSource;
 
-	eventSource.onmessage = (event: MessageEvent<string>) => {
-		try {
-			const data = JSON.parse(event.data) as ContainerInfo[];
-			containerUpdates = data;
-		} catch (err) {
-			console.error('Error parsing SSE data:', err);
-		}
-	};
+	onMount(() => {
+		eventSource = new EventSource('/api/sse/docker');
 
-	eventSource.onerror = (error: Event) => {
-		console.error('EventSource error:', error);
-	};
+		eventSource.onmessage = (event: MessageEvent<string>) => {
+			try {
+				const data = JSON.parse(event.data) as ContainerInfo[];
+				containerUpdates = data;
+			} catch (err) {
+				console.error('Error parsing SSE data:', err);
+			}
+		};
 
-	onDestroy(() => {
-		eventSource.close();
+		eventSource.onerror = (error: Event) => {
+			console.error('EventSource error:', error);
+		};
+
+		return () => {
+			eventSource.close();
+		};
 	});
 
 	$inspect(containerUpdates);

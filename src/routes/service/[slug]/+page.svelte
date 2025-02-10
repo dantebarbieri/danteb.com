@@ -1,27 +1,31 @@
 <script lang="ts">
-	import { onDestroy } from 'svelte';
+	import { onMount } from 'svelte';
 	import type { ContainerInspectInfo } from 'dockerode';
 	import type { PageProps } from './$types';
 
 	let { data }: PageProps = $props();
 	let container = $state<ContainerInspectInfo | null>(null);
-	const eventSource = new EventSource(`/api/sse/docker/${data.slug}`);
+	let eventSource: EventSource;
 
-	eventSource.onmessage = (event: MessageEvent<string>) => {
-		try {
-			const parsed = JSON.parse(event.data) as ContainerInspectInfo;
-			container = parsed;
-		} catch (err) {
-			console.error('Error parsing SSE data:', err);
-		}
-	};
+	onMount(() => {
+		eventSource = new EventSource(`/api/sse/docker/${data.slug}`);
 
-	eventSource.onerror = (error: Event) => {
-		console.error('EventSource error:', error);
-	};
+		eventSource.onmessage = (event: MessageEvent<string>) => {
+			try {
+				const parsed = JSON.parse(event.data) as ContainerInspectInfo;
+				container = parsed;
+			} catch (err) {
+				console.error('Error parsing SSE data:', err);
+			}
+		};
 
-	onDestroy(() => {
-		eventSource.close();
+		eventSource.onerror = (error: Event) => {
+			console.error('EventSource error:', error);
+		};
+
+		return () => {
+			eventSource.close();
+		};
 	});
 
 	function flattenObject(
