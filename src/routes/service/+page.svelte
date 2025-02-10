@@ -2,7 +2,7 @@
 	import { onDestroy } from 'svelte';
 	import type { ContainerInfo } from 'dockerode';
 
-	let containerUpdates: ContainerInfo[] = [];
+	let containerUpdates = $state<ContainerInfo[]>([]);
 
 	const eventSource = new EventSource('/api/sse/docker');
 
@@ -10,7 +10,6 @@
 		try {
 			const data = JSON.parse(event.data) as ContainerInfo[];
 			containerUpdates = data;
-			console.log(containerUpdates);
 		} catch (err) {
 			console.error('Error parsing SSE data:', err);
 		}
@@ -23,6 +22,8 @@
 	onDestroy(() => {
 		eventSource.close();
 	});
+
+	$inspect(containerUpdates);
 </script>
 
 <h1>Docker Container Updates</h1>

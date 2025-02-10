@@ -1,6 +1,6 @@
 import Docker from 'dockerode';
 
-function createSSEStream(pollFn: () => Promise<string>, pollInterval = 1000): ReadableStream {
+function createSSEStream(pollFn: () => Promise<string>, pollInterval = 500): ReadableStream {
     let intervalId: NodeJS.Timer;
     let cancelled = false;
 

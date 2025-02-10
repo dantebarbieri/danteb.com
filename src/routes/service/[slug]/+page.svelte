@@ -56,10 +56,12 @@
 
 		return entries;
 	}
+
+	$inspect(container);
 </script>
 
-<h1>Docker Container Updates</h1>
 {#if container}
+	<h1>{container.Name.replace(/^\//, '')} Updates</h1>
 	<table>
 		<thead>
 			<tr>
@@ -77,5 +79,6 @@
 		</tbody>
 	</table>
 {:else}
+	<h1>Docker Container Updates</h1>
 	<p>No container data available.</p>
 {/if}
