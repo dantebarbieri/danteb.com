@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { onDestroy } from 'svelte';
 	import type { ContainerInfo } from 'dockerode';
 
 	let containerUpdates: ContainerInfo[] = [];
@@ -18,6 +19,10 @@
 	eventSource.onerror = (error: Event) => {
 		console.error('EventSource error:', error);
 	};
+
+	onDestroy(() => {
+		eventSource.close();
+	});
 </script>
 
 <h1>Docker Container Updates</h1>
@@ -32,11 +37,11 @@
 		<tbody>
 			{#each containerUpdates as container}
 				<tr>
-					<td
-						><a href="/service/{container.Id}"
-							>{container.Names.map((name) => name.replace(/^\//, '')).join(', ')}</a
-						></td
-					>
+					<td>
+						<a href="/service/{container.Id}">
+							{container.Names.map((name) => name.replace(/^\//, '')).join(', ')}
+						</a>
+					</td>
 					<td>{container.Status}</td>
 				</tr>
 			{/each}
