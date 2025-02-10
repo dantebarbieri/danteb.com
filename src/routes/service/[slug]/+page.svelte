@@ -4,9 +4,7 @@
 	import type { PageProps } from './$types';
 
 	let { data }: PageProps = $props();
-
 	let container = $state<ContainerInspectInfo | null>(null);
-
 	const eventSource = new EventSource(`/api/sse/docker/${data.slug}`);
 
 	eventSource.onmessage = (event: MessageEvent<string>) => {
@@ -26,7 +24,38 @@
 		eventSource.close();
 	});
 
-	$inspect(container);
+	function flattenObject(
+		obj: any,
+		prefix: string = ''
+	): { key: string; value: any }[] {
+		let entries: { key: string; value: any }[] = [];
+
+		if (obj !== null && typeof obj === 'object') {
+			if (Array.isArray(obj)) {
+				obj.forEach((item, index) => {
+					const newPrefix = `${prefix}[${index}]`;
+					if (item !== null && typeof item === 'object') {
+						entries.push(...flattenObject(item, newPrefix));
+					} else {
+						entries.push({ key: newPrefix, value: item });
+					}
+				});
+			} else {
+				for (const [key, value] of Object.entries(obj)) {
+					const newPrefix = prefix ? `${prefix}.${key}` : key;
+					if (value !== null && typeof value === 'object') {
+						entries.push(...flattenObject(value, newPrefix));
+					} else {
+						entries.push({ key: newPrefix, value });
+					}
+				}
+			}
+		} else {
+			entries.push({ key: prefix, value: obj });
+		}
+
+		return entries;
+	}
 </script>
 
 <h1>Docker Container Updates</h1>
@@ -34,26 +63,16 @@
 	<table>
 		<thead>
 			<tr>
-				<th>Property</th>
+				<th>Property (JSON Path)</th>
 				<th>Value</th>
 			</tr>
 		</thead>
 		<tbody>
-			{#each Object.entries(container) as [key, value]}
-				{#if typeof value === 'object'}
-					{#each Object.entries(value) as [subKey, subValue]}
-						<tr>
-							<td>{subKey}</td>
-							<td>{subValue}</td>
-						</tr>
-					{/each}
-				{:else}
-					<tr>
-						<td>{key}</td>
-						<td>{value}</td>
-					</tr>
-					
-				{/if}
+			{#each flattenObject(container) as { key, value }}
+				<tr>
+					<td>{key}</td>
+					<td>{value}</td>
+				</tr>
 			{/each}
 		</tbody>
 	</table>
