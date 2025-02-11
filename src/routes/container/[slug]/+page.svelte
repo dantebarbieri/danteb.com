@@ -28,10 +28,7 @@
 		};
 	});
 
-	function flattenObject(
-		obj: any,
-		prefix: string = ''
-	): { key: string; value: any }[] {
+	function flattenObject(obj: any, prefix: string = ''): { key: string; value: any }[] {
 		let entries: { key: string; value: any }[] = [];
 
 		if (obj !== null && typeof obj === 'object') {
@@ -65,7 +62,7 @@
 </script>
 
 {#if container}
-	<h1>{container.Name.replace(/^\//, '')} Updates</h1>
+	<h1>{container.Name.replace(/^\//, '')}</h1>
 	<table>
 		<thead>
 			<tr>
@@ -83,6 +80,10 @@
 		</tbody>
 	</table>
 {:else}
-	<h1>Docker Container Updates</h1>
-	<p>No container data available.</p>
+	<h1>Unknown Container</h1>
+	<p>
+		No container data available. It may be loading, or the container with id
+		<code>{data.slug}</code>
+		may not exist.
+	</p>
 {/if}
