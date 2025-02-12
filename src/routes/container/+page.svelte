@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import type { ContainerInfo } from 'dockerode';
+	import Container from '$lib/Container.svelte';
 
 	let containerUpdates = $state<ContainerInfo[]>([]);
 
@@ -32,26 +33,15 @@
 
 <h1>Docker Containers</h1>
 {#if containerUpdates && containerUpdates.length > 0}
-	<table>
-		<thead>
-			<tr>
-				<th>Container</th>
-				<th>Status</th>
-			</tr>
-		</thead>
-		<tbody>
-			{#each containerUpdates as container}
-				<tr>
-					<td>
-						<a href="/container/{container.Id}">
-							{container.Names.map((name) => name.replace(/^\//, '')).join(', ')}
-						</a>
-					</td>
-					<td>{container.Status}</td>
-				</tr>
-			{/each}
-		</tbody>
-	</table>
+	{#each containerUpdates as container (container.Id)}
+		<Container
+			slug={container.Id}
+			name={container.Names.map((name) => name.replace(/^\//, '')).join(', ')}
+			uptime={10}
+			status={container.Status}
+			health={container.State.Health?.Status}
+		/>
+	{/each}
 {:else}
 	<p>No container data available.</p>
 {/if}

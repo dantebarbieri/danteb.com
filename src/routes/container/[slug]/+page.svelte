@@ -71,7 +71,7 @@
 			</tr>
 		</thead>
 		<tbody>
-			{#each flattenObject(container) as { key, value }}
+			{#each flattenObject(container) as { key, value } (key)}
 				<tr>
 					<td>{key}</td>
 					<td>{value}</td>
