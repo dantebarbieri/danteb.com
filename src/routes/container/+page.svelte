@@ -37,9 +37,8 @@
 		<Container
 			slug={container.Id}
 			name={container.Names.map((name) => name.replace(/^\//, '')).join(', ')}
-			uptime={10}
 			status={container.Status}
-			health={container.State.Health?.Status}
+			state={container.State}
 		/>
 	{/each}
 {:else}

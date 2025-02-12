@@ -1,13 +1,20 @@
 <script lang="ts">
-	let { slug, name, uptime, status, health } = $props();
+	interface Props {
+		slug: string;
+		name: string;
+		state: string;
+		status: string;
+	}
+
+	let { slug, name, state, status }: Props = $props();
 </script>
 
-<article data-health={health} labeledby="title-{slug}">
+<article data-health={state}>
 	<header>
-		<h2 id="title-{slug}"><a href="/container/{slug}">{name}</a></h2>
-		<label for="status">Status:</label> <span id="status">{status}</span>
+		<h2><a href="/container/{slug}">{name}</a></h2>
+		<label for="state-{slug}">Status:</label> <span id="state-{slug}">{state}</span>
 	</header>
-	<p>{uptime}</p>
+	<p>{status}</p>
 </article>
 
 <style>
@@ -20,12 +27,24 @@
 		max-width: 16rem;
 	}
 
-	[data-health='healthy'] {
-		background-color: lightgreen;
+	[data-health='running'] {
+		background-color: light-dark(lightgreen, darkgreen);
 	}
 
-	[data-health='unhealthy'] {
-		background-color: lightred;
+	[data-health='restarting'] {
+		background-color: light-dark(lightgoldenrodyellow, darkgoldenrod);
+	}
+
+	[data-health='paused'] {
+		background-color: light-dark(lightblue, darkblue);
+	}
+
+	[data-health='exited'] {
+		background-color: light-dark(lightcoral, darkred);
+	}
+
+	[data-health='dead'] {
+		background-color: light-dark(lightgray, darkgray);
 	}
 
 	a {
