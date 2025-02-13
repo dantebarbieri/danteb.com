@@ -1,62 +1,77 @@
 <script lang="ts">
-	interface Props {
-		slug: string;
-		name: string;
-		state: string;
-		status: string;
-	}
+    interface Props {
+        slug: string;
+        name: string;
+        state: string;
+        status: string;
+    }
 
-	let { slug, name, state, status }: Props = $props();
+    let { slug, name, state, status }: Props = $props();
 </script>
 
 <article data-health={state}>
-	<header>
-		<h2><a href="/container/{slug}">{name}</a></h2>
-		<label for="state-{slug}">Status:</label> <span id="state-{slug}">{state}</span>
-	</header>
-	<p>{status}</p>
+    <header>
+        <h2><a href="/container/{slug}">{name}</a></h2>
+        <label for="state-{slug}">Status:</label> <span id="state-{slug}">{state}</span>
+    </header>
+    <p class="status">{status}</p>
 </article>
 
 <style>
-	article {
-		display: flex;
-		flex-direction: column;
-		justify-content: space-between;
-		padding: 1rem;
-		border-bottom: 1px solid currentColor;
-		max-width: 16rem;
-	}
+    article {
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        padding: 1rem;
+        border-radius: 1rem;
+        max-width: 16rem;
+        background-color: var(--background-300);
+        box-shadow: 5px 5px 10px var(--accent-100);
+    }
 
-	[data-health='running'] {
-		background-color: light-dark(lightgreen, darkgreen);
-	}
+    article::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        background: linear-gradient(0deg, transparent, transparent 30%, var(--accent));
+        transform: rotate(-45deg);
+        transition: all 0.5s ease;
+        opacity: 0;
+    }
 
-	[data-health='restarting'] {
-		background-color: light-dark(lightgoldenrodyellow, darkgoldenrod);
-	}
+    @media (prefers-reduced-motion: no-preference) {
+        article {
+            transition: all 0.5s ease;
+            position: relative;
+            overflow: hidden;
+        }
 
-	[data-health='paused'] {
-		background-color: light-dark(lightblue, darkblue);
-	}
+        article:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 20px var(--accent);
+        }
 
-	[data-health='exited'] {
-		background-color: light-dark(lightcoral, darkred);
-	}
+        article:hover::before {
+            opacity: 1;
+            transform: rotate(-45deg) translateY(100%);
+        }
+    }
 
-	[data-health='dead'] {
-		background-color: light-dark(lightgray, darkgray);
-	}
+    a {
+        text-decoration: none;
+        color: currentColor;
+    }
 
-	a {
-		text-decoration: none;
-		color: currentColor;
-	}
+    a:hover {
+        text-decoration: underline;
+    }
 
-	a:hover {
-		text-decoration: underline;
-	}
-
-	p {
-		text-align: right;
-	}
+    .status {
+        color: var(--text-600);
+        font-weight: bold;
+        text-align: right;
+    }
 </style>
