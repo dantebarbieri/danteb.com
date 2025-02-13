@@ -9,12 +9,15 @@
     let { slug, name, state, status }: Props = $props();
 </script>
 
-<article data-health={state}>
+<article data-health={state} aria-labelledby="name-{slug}" aria-describedby="state-{slug} status-{slug}">
     <header>
-        <h2><a href="/container/{slug}">{name}</a></h2>
-        <label for="state-{slug}">Status:</label> <span id="state-{slug}">{state}</span>
+        <h2 id="name-{slug}">
+            <a href="/container/{slug}" aria-label="View details for {name}">{name}</a>
+        </h2>
+        <label for="state-{slug}">Status:</label> 
+        <span id="state-{slug}" aria-live="polite">{state}</span>
     </header>
-    <p class="status">{status}</p>
+    <p class="status" id="status-{slug}" aria-live="polite">{status}</p>
 </article>
 
 <style>
