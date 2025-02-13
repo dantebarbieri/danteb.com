@@ -58,7 +58,7 @@ export function containersStream(): Response {
     let previousContainersJSON = '';
 
     const pollFn = async (): Promise<string> => {
-        const containers = await docker.listContainers();
+        const containers = await docker.listContainers({ all: true });
         const containersJSON = JSON.stringify(containers);
         if (containersJSON !== previousContainersJSON) {
             previousContainersJSON = containersJSON;
