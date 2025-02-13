@@ -76,5 +76,6 @@
         color: var(--text-600);
         font-weight: bold;
         text-align: right;
+        cursor: default;
     }
 </style>
