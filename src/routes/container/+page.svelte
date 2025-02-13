@@ -7,6 +7,8 @@
 
 	let eventSource: EventSource;
 
+	let filterQuery = $state('');
+
 	onMount(() => {
 		eventSource = new EventSource('/api/sse/docker');
 
@@ -33,8 +35,19 @@
 
 <h1>Docker Containers</h1>
 {#if containerUpdates && containerUpdates.length > 0}
+	<input
+		type="text"
+		placeholder="Filter containers by name"
+		bind:value={filterQuery}
+	>
 	<ul>
-		{#each containerUpdates as container (container.Id)}
+		{#each containerUpdates.filter((container) =>
+			container.Names
+				.map((name) => name.replace(/^\//, ''))
+				.join(', ')
+				.toLowerCase()
+				.includes(filterQuery.toLowerCase())
+		) as container (container.Id)}
 			<Container
 				slug={container.Id}
 				name={container.Names.map((name) => name.replace(/^\//, '')).join(', ')}
@@ -52,5 +65,15 @@
 		display: grid;
 		grid-template-columns: repeat(auto-fit, minmax(25rem, 1fr));
 		grid-gap: 1rem;
+		padding: 0;
+	}
+
+	input {
+		padding: 0.5rem;
+		border-radius: 0.5rem;
+		border: 1px solid var(--accent-100);
+		background-color: var(--background-100);
+		color: var(--text-800);
+		font-size: 1rem;
 	}
 </style>
