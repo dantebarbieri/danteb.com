@@ -25,9 +25,8 @@
         display: flex;
         flex-direction: column;
         justify-content: space-between;
-        padding: 1rem;
-        border-radius: 1rem;
-        max-width: 16rem;
+        padding: 0.2rem 1rem;
+        border-radius: .67rem;
         background-color: var(--background-300);
         box-shadow: 5px 5px 10px var(--accent-100);
     }
@@ -40,7 +39,8 @@
         width: 200%;
         height: 200%;
         background: linear-gradient(0deg, transparent, transparent 30%, var(--accent));
-        transform: rotate(-45deg);
+        rotate: -45deg;
+        translate: 0;
         transition: all 0.5s ease;
         opacity: 0;
     }
@@ -53,13 +53,13 @@
         }
 
         article:hover {
-            transform: scale(1.05);
+            transform: scale(1.025);
             box-shadow: 0 0 20px var(--accent);
         }
 
         article:hover::before {
             opacity: 1;
-            transform: rotate(-45deg) translateY(100%);
+            translate: 100%;
         }
     }
 

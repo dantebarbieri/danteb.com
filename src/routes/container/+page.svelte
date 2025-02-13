@@ -33,14 +33,24 @@
 
 <h1>Docker Containers</h1>
 {#if containerUpdates && containerUpdates.length > 0}
-	{#each containerUpdates as container (container.Id)}
-		<Container
-			slug={container.Id}
-			name={container.Names.map((name) => name.replace(/^\//, '')).join(', ')}
-			status={container.Status}
-			state={container.State}
-		/>
-	{/each}
+	<ul>
+		{#each containerUpdates as container (container.Id)}
+			<Container
+				slug={container.Id}
+				name={container.Names.map((name) => name.replace(/^\//, '')).join(', ')}
+				status={container.Status}
+				state={container.State}
+			/>
+		{/each}
+	</ul>
 {:else}
 	<p>No container data available.</p>
 {/if}
+
+<style>
+	ul {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(25rem, 1fr));
+		grid-gap: 1rem;
+	}
+</style>
