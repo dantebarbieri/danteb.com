@@ -1,11 +1,13 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import type { ContainerInfo } from 'dockerode';
-	import type {LoadingMessage, ErrorMessage, TransmittingMessage, Message} from '$lib/api/sse/docker';
+	import type { Message } from '$lib/api/sse/docker';
+	import { localStore } from '$lib/LocalStore.svelte';
 	import Container from '$lib/Container.svelte';
+	import Spinner from '$lib/Spinner.svelte';
 
-	let loadingState = $state<"loading" | "error" | "transmitting">('loading');
-	let containerUpdates = $state<ContainerInfo[]>([]);
+	let containers = localStore<ContainerInfo[]>('containers', []);
+	let loadingState = $state<"loading" | "error" | "transmitting">(containers.value ? "transmitting" : "loading");
 	let errorMessage = $state<string | null>(null);
 
 	let eventSource: EventSource;
@@ -19,19 +21,20 @@
 			try {
 				const message = JSON.parse(event.data) as Message<ContainerInfo[]>;
 				if (message.status === 'loading') {
-					loadingState = 'loading';
-					containerUpdates = [];
+					if (!(containers.value && containers.value.length > 0)) {
+						loadingState = 'loading';
+						containers.value = [];
+					}
 					errorMessage = null;
 				} else if (message.status === 'error') {
 					loadingState = 'error';
-					containerUpdates = [];
+					containers.value = [];
 					errorMessage = message.error;
 				} else if (message.status === 'transmitting') {
 					loadingState = 'transmitting';
-					containerUpdates = message.contents;
+					containers.value = message.contents;
 					errorMessage = null;
 				}
-				loadingState = event.
 			} catch (err) {
 				console.error('Error parsing SSE data:', err);
 			}
@@ -46,34 +49,35 @@
 		};
 	});
 
-	$inspect(containerUpdates);
+	$inspect(containers.value);
 </script>
 
 <h1>Docker Containers</h1>
-{#if containerUpdates && containerUpdates.length > 0}
-	<input
-		type="text"
-		placeholder="Filter containers by name"
-		bind:value={filterQuery}
-	>
-	<ul>
-		{#each containerUpdates.filter((container) =>
-			container.Names
-				.map((name) => name.replace(/^\//, ''))
-				.join(', ')
-				.toLowerCase()
-				.includes(filterQuery.toLowerCase())
-		) as container (container.Id)}
-			<Container
-				slug={container.Id}
-				name={container.Names.map((name) => name.replace(/^\//, '')).join(', ')}
-				status={container.Status}
-				state={container.State}
-			/>
-		{/each}
-	</ul>
-{:else}
-	<p>No container data available.</p>
+{#if loadingState === 'loading'}
+	<div class="loading">
+		<Spinner />
+	</div>
+{:else if loadingState === 'error'}
+	<p>{errorMessage}</p>
+{:else if loadingState === 'transmitting'}
+	{#if containers.value && containers.value.length > 0}
+		<input type="text" placeholder="Filter containers by name" bind:value={filterQuery} />
+		<ul>
+			{#each containers.value.filter( (container) => container.Names.map( (name) => name.replace(/^\//, '') )
+						.join(', ')
+						.toLowerCase()
+						.includes(filterQuery.toLowerCase()) ) as container (container.Id)}
+				<Container
+					slug={container.Id}
+					name={container.Names.map((name) => name.replace(/^\//, '')).join(', ')}
+					status={container.Status}
+					state={container.State}
+				/>
+			{/each}
+		</ul>
+	{:else}
+		<p>No container data available.</p>
+	{/if}
 {/if}
 
 <style>
@@ -91,5 +95,11 @@
 		background-color: var(--background-100);
 		color: var(--text-800);
 		font-size: 1rem;
+	}
+
+	.loading {
+		display: flex;
+		justify-content: center;
+		align-items: center;
 	}
 </style>

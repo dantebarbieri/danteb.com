@@ -24,7 +24,7 @@ function send<T>(controller: ReadableStreamDefaultController<string>, message: M
     controller.enqueue(`data: ${JSON.stringify(message)}\n\n`);
 }
 
-function createSSEStream<T>(pollFn: () => Promise<T>, pollInterval = 500): ReadableStream {
+function createSSEStream<T>(pollFn: () => Promise<T | null>, pollInterval = 500): ReadableStream {
     let intervalId: NodeJS.Timer;
     let cancelled = false;
 
@@ -34,8 +34,9 @@ function createSSEStream<T>(pollFn: () => Promise<T>, pollInterval = 500): Reada
                 if (cancelled) return;
 
                 try {
-                    const message: Message<T> = { contents: await pollFn(), status: "transmitting" };
-                    if (message) {
+                    var contents = await pollFn();
+                    if (contents) {
+                        const message: Message<T> = { contents: contents, status: "transmitting" };
                         try {
                             send(controller, message);
                         } catch (err: any) {
@@ -92,14 +93,14 @@ export function containersStream(): Response {
     const docker = new Docker();
     let previousContainersJSON = '';
 
-    const pollFn = async (): Promise<string> => {
+    const pollFn = async (): Promise<ContainerInfo[] | null> => {
         const containers = await docker.listContainers({ all: true });
         const containersJSON = JSON.stringify(containers);
         if (containersJSON !== previousContainersJSON) {
             previousContainersJSON = containersJSON;
-            return `data: ${containersJSON}\n\n`;
+            return containers;
         }
-        return '';
+        return null;
     };
 
     const stream = createSSEStream(pollFn, 1000);
@@ -116,14 +117,14 @@ export function containerStream(containerId: string): Response {
     const docker = new Docker();
     let previousContainerJSON = '';
 
-    const pollFn = async (): Promise<string> => {
+    const pollFn = async (): Promise<ContainerInspectInfo | null> => {
         const container = await docker.getContainer(containerId).inspect();
         const containerJSON = JSON.stringify(container);
         if (containerJSON !== previousContainerJSON) {
             previousContainerJSON = containerJSON;
-            return `data: ${containerJSON}\n\n`;
+            return container;
         }
-        return '';
+        return null;
     };
 
     const stream = createSSEStream(pollFn, 1000);
