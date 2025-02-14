@@ -1,9 +1,12 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import type { ContainerInfo } from 'dockerode';
+	import type {LoadingMessage, ErrorMessage, TransmittingMessage, Message} from '$lib/api/sse/docker';
 	import Container from '$lib/Container.svelte';
 
+	let loadingState = $state<"loading" | "error" | "transmitting">('loading');
 	let containerUpdates = $state<ContainerInfo[]>([]);
+	let errorMessage = $state<string | null>(null);
 
 	let eventSource: EventSource;
 
@@ -14,8 +17,21 @@
 
 		eventSource.onmessage = (event: MessageEvent<string>) => {
 			try {
-				const data = JSON.parse(event.data) as ContainerInfo[];
-				containerUpdates = data;
+				const message = JSON.parse(event.data) as Message<ContainerInfo[]>;
+				if (message.status === 'loading') {
+					loadingState = 'loading';
+					containerUpdates = [];
+					errorMessage = null;
+				} else if (message.status === 'error') {
+					loadingState = 'error';
+					containerUpdates = [];
+					errorMessage = message.error;
+				} else if (message.status === 'transmitting') {
+					loadingState = 'transmitting';
+					containerUpdates = message.contents;
+					errorMessage = null;
+				}
+				loadingState = event.
 			} catch (err) {
 				console.error('Error parsing SSE data:', err);
 			}

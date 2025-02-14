@@ -1,6 +1,30 @@
-import Docker from 'dockerode';
+import Docker, { type ContainerInfo, type ContainerInspectInfo } from 'dockerode';
 
-function createSSEStream(pollFn: () => Promise<string>, pollInterval = 500): ReadableStream {
+interface ErrorMessage {
+    error: string;
+    status: "error";
+}
+
+interface LoadingMessage {
+    status: "loading";
+}
+
+interface TransmittingMessage<T> {
+    contents: T;
+    status: "transmitting";
+}
+
+export type Message<T> = ErrorMessage | LoadingMessage | TransmittingMessage<T>;
+
+export type ContainersMessage = Message<ContainerInfo[]>;
+
+export type ContainerMessage = Message<ContainerInspectInfo>;
+
+function send<T>(controller: ReadableStreamDefaultController<string>, message: Message<T>) {
+    controller.enqueue(`data: ${JSON.stringify(message)}\n\n`);
+}
+
+function createSSEStream<T>(pollFn: () => Promise<T>, pollInterval = 500): ReadableStream {
     let intervalId: NodeJS.Timer;
     let cancelled = false;
 
@@ -10,10 +34,10 @@ function createSSEStream(pollFn: () => Promise<string>, pollInterval = 500): Rea
                 if (cancelled) return;
 
                 try {
-                    const message = await pollFn();
+                    const message: Message<T> = { contents: await pollFn(), status: "transmitting" };
                     if (message) {
                         try {
-                            controller.enqueue(message);
+                            send(controller, message);
                         } catch (err: any) {
                             if (err.code === 'ERR_INVALID_STATE') {
                                 cancelled = true;
@@ -24,11 +48,21 @@ function createSSEStream(pollFn: () => Promise<string>, pollInterval = 500): Rea
                             }
                         }
                     }
-                } catch (err: any) {
+                } catch (err: unknown) {
                     console.error('Error during poll:', err);
+                    let reason = JSON.stringify(err);
+                    if (err instanceof Error) {
+                        reason = err.message;
+                    } else if (typeof err === 'string') {
+                        reason = err;
+                    }
                     if (!cancelled) {
                         try {
-                            controller.enqueue(`data: ${JSON.stringify({ error: err.message })}\n\n`);
+                            const message: Message<T> = {
+                                error: reason,
+                                status: "error",
+                            };
+                            send(controller, message);
                         } catch (innerErr) {
                             // If the controller is closed, just ignore.
                         }
@@ -36,7 +70,8 @@ function createSSEStream(pollFn: () => Promise<string>, pollInterval = 500): Rea
                 }
             }
 
-            await poll();
+            const message: Message<T> = { status: "loading" };
+            send(controller, message);
             intervalId = setInterval(poll, pollInterval);
         },
         cancel() {
