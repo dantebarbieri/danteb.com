@@ -64,7 +64,7 @@ function safeSend<T>(
  */
 function createSSEStream<T>(
 	pollFn: () => Promise<DifferenceResult<T>>,
-	pollInterval = 500
+	pollInterval: number
 ): ReadableStream {
 	let intervalId: NodeJS.Timeout;
 	let cancelled = false;
@@ -122,7 +122,7 @@ function createSSEStream<T>(
  */
 function respondWithStream<T>(
 	pollFn: () => Promise<DifferenceResult<T>>,
-	pollInterval = 500
+	pollInterval = 500/*ms*/
 ): Response {
 	const headers = {
 		'Content-Type': 'text/event-stream',
@@ -149,7 +149,7 @@ export function containersStream(): Response {
 			return { kind: 'difference', contents: containers };
 		}
 		return { kind: 'nodifference' };
-	}, 500);
+	});
 }
 
 /**
@@ -174,7 +174,7 @@ export function containerStream(containerName: string): Response {
 		try {
 			const container = await docker
 				.getContainer(containerId)
-				.inspect({ abortSignal: AbortSignal.timeout(1000) });
+				.inspect({ abortSignal: AbortSignal.timeout(1000/*ms*/) });
 			const containerJSON = JSON.stringify(container);
 			if (containerJSON !== previousContainerJSON) {
 				previousContainerJSON = containerJSON;
@@ -188,5 +188,5 @@ export function containerStream(containerName: string): Response {
 			}
 			throw err;
 		}
-	}, 500);
+	});
 }
