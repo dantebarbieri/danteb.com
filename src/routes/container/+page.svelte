@@ -7,8 +7,8 @@
 	import Spinner from '$lib/spinners/GridSpinner.svelte';
 
 	let containers = localStore<ContainerInfo[]>('containers', []);
-	let loadingState = $state<'loading' | 'error' | 'transmitting'>(
-		containers.value ? 'transmitting' : 'loading'
+	let loadingState = $state<'cached' | 'loading' | 'error' | 'transmitting'>(
+		containers.value ? 'cached' : 'loading'
 	);
 	let errorMessage = $state<string | null>(null);
 
@@ -23,7 +23,7 @@
 			try {
 				const message = JSON.parse(event.data) as Message<ContainerInfo[]>;
 				if (message.status === 'loading') {
-					if (!(containers.value && containers.value.length > 0)) {
+					if (loadingState !== 'cached') {
 						loadingState = 'loading';
 						containers.value = [];
 					}
@@ -54,19 +54,23 @@
 		};
 	});
 
-	$inspect(loadingState)
+	$inspect(loadingState);
 	$inspect(containers.value);
 	$inspect(errorMessage);
 </script>
 
-<h1>Docker Containers</h1>
+{#if loadingState === 'cached'}
+	<h1>Docker Containers <i>(Cached)</i></h1>
+{:else}
+	<h1>Docker Containers</h1>
+{/if}
 {#if loadingState === 'loading'}
 	<div class="loading">
 		<Spinner />
 	</div>
 {:else if loadingState === 'error'}
 	<p>{errorMessage}</p>
-{:else if loadingState === 'transmitting'}
+{:else if loadingState === 'transmitting' || loadingState === 'cached'}
 	{#if containers.value && containers.value.length > 0}
 		<input type="text" placeholder="Filter containers by name" bind:value={filterQuery} />
 		<ul>

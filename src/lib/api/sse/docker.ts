@@ -43,10 +43,10 @@ function createSSEStream<T>(pollFn: () => Promise<T | null>, pollInterval = 500)
 							if (
 								err instanceof TypeError &&
 								(err as unknown as { code: string }).code === 'ERR_INVALID_STATE'
-                            ) {
+							) {
 								cancelled = true;
 								clearInterval(intervalId);
-                            } else {
+							} else {
 								controller.error(err);
 							}
 						}

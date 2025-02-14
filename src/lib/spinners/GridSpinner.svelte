@@ -14,7 +14,7 @@
 	.lds-grid,
 	.lds-grid div {
 		box-sizing: border-box;
-        cursor: wait;
+		cursor: wait;
 	}
 	.lds-grid {
 		display: inline-block;
