@@ -29,11 +29,11 @@
 					}
 					errorMessage = null;
 				} else if (message.status === 'error') {
-					// loadingState = 'error';
+					loadingState = 'error';
 					container.value = null;
 					errorMessage = message.error;
 				} else if (message.status === 'transmitting') {
-					// loadingState = 'transmitting';
+					loadingState = 'transmitting';
 					container.value = message.contents;
 					errorMessage = null;
 				}
