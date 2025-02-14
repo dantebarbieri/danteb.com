@@ -14,6 +14,10 @@ interface TransmittingMessage<T> {
 	status: 'transmitting';
 }
 
+type NoDifference = { nodifference: true };
+
+type Difference<T> = { nodifference: false; contents: T };
+
 export type Message<T> = ErrorMessage | LoadingMessage | TransmittingMessage<T>;
 
 export type ContainersMessage = Message<ContainerInfo[]>;
@@ -24,7 +28,7 @@ function send<T>(controller: ReadableStreamDefaultController<string>, message: M
 	controller.enqueue(`data: ${JSON.stringify(message)}\n\n`);
 }
 
-function createSSEStream<T>(pollFn: () => Promise<T | null>, pollInterval = 500): ReadableStream {
+function createSSEStream<T>(pollFn: () => Promise<Difference<T> | NoDifference>, pollInterval = 500): ReadableStream {
 	let intervalId: NodeJS.Timeout;
 	let cancelled = false;
 
@@ -34,9 +38,9 @@ function createSSEStream<T>(pollFn: () => Promise<T | null>, pollInterval = 500)
 				if (cancelled) return;
 
 				try {
-					const contents = await pollFn();
-					if (contents) {
-						const message: Message<T> = { contents: contents, status: 'transmitting' };
+					const difference = await pollFn();
+					if (!difference.nodifference) {
+						const message: Message<T> = { contents: difference.contents, status: 'transmitting' };
 						try {
 							send(controller, message);
 						} catch (err) {
@@ -92,50 +96,55 @@ function createSSEStream<T>(pollFn: () => Promise<T | null>, pollInterval = 500)
 	});
 }
 
-export function containersStream(): Response {
+function respondWithStream<T>(pollFn: () => Promise<Difference<T> | NoDifference>, pollInterval = 500): Response {
 	const headers = {
 		'Content-Type': 'text/event-stream',
 		'Cache-Control': 'no-cache',
 		Connection: 'keep-alive'
 	};
 
-	const docker = new Docker();
-	let previousContainersJSON = '';
+	const stream = createSSEStream(pollFn, pollInterval);
 
-	const pollFn = async (): Promise<ContainerInfo[] | null> => {
-		const containers = await docker.listContainers({ all: true });
-		const containersJSON = JSON.stringify(containers);
-		if (containersJSON !== previousContainersJSON) {
-			previousContainersJSON = containersJSON;
-			return containers;
-		}
-		return null;
-	};
-
-	const stream = createSSEStream(pollFn, 1000);
 	return new Response(stream, { headers });
 }
 
-export function containerStream(containerId: string): Response {
-	const headers = {
-		'Content-Type': 'text/event-stream',
-		'Cache-Control': 'no-cache',
-		Connection: 'keep-alive'
-	};
+export function containersStream(): Response {
+	const docker = new Docker();
+	let previousContainersJSON = '';
 
+	return respondWithStream(
+		async (): Promise<Difference<ContainerInfo[]> | NoDifference> => {
+			const containers = await docker.listContainers({ all: true });
+			const containersJSON = JSON.stringify(containers);
+			if (containersJSON !== previousContainersJSON) {
+				previousContainersJSON = containersJSON;
+				return { nodifference: false, contents: containers };
+			}
+			return { nodifference: true };
+		},
+		500
+	);
+}
+
+export function containerStream(containerId: string): Response {
 	const docker = new Docker();
 	let previousContainerJSON = '';
 
-	const pollFn = async (): Promise<ContainerInspectInfo | null> => {
-		const container = await docker.getContainer(containerId).inspect();
-		const containerJSON = JSON.stringify(container);
-		if (containerJSON !== previousContainerJSON) {
-			previousContainerJSON = containerJSON;
-			return container;
-		}
-		return null;
-	};
-
-	const stream = createSSEStream(pollFn, 1000);
-	return new Response(stream, { headers });
+	return respondWithStream(
+		async (): Promise<Difference<ContainerInspectInfo> | NoDifference> => {
+			try {
+				const container = await docker.getContainer(containerId).inspect();
+				const containerJSON = JSON.stringify(container);
+				if (containerJSON !== previousContainerJSON) {
+					previousContainerJSON = containerJSON;
+					return { nodifference: false, contents: container };
+				}
+				return { nodifference: true };
+			} catch (err) {
+				console.error(err);
+				throw err;
+			}
+		},
+		500
+	);
 }
