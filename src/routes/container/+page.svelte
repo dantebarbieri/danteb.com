@@ -44,6 +44,9 @@
 
 		eventSource.onerror = (error: Event) => {
 			console.error('EventSource error:', error);
+			eventSource.close();
+			loadingState = 'error';
+			errorMessage = 'Error connecting to server.';
 		};
 
 		return () => {
@@ -51,7 +54,9 @@
 		};
 	});
 
+	$inspect(loadingState)
 	$inspect(containers.value);
+	$inspect(errorMessage);
 </script>
 
 <h1>Docker Containers</h1>

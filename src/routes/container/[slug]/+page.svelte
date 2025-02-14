@@ -2,13 +2,16 @@
 	import { onMount } from 'svelte';
 	import type { ContainerInspectInfo } from 'dockerode';
 	import type { Message } from '$lib/api/sse/docker';
+	import { localStore } from '$lib/LocalStore.svelte';
 	import Spinner from '$lib/Spinner.svelte';
 	import type { PageProps } from './$types';
 
 	let { data }: PageProps = $props();
 
-	let loadingState = $state<'loading' | 'error' | 'transmitting'>('loading');
-	let container = $state<ContainerInspectInfo | null>(null);
+	let container = localStore<ContainerInspectInfo | null>(`container-${data.slug}`, null);
+	let loadingState = $state<'loading' | 'error' | 'transmitting'>(
+		container.value ? 'transmitting' : 'loading'
+	);
 	let errorMessage = $state<string | null>(null);
 
 	let eventSource: EventSource;
@@ -20,16 +23,18 @@
 			try {
 				const message = JSON.parse(event.data) as Message<ContainerInspectInfo>;
 				if (message.status === 'loading') {
-					loadingState = 'loading';
-					container = null;
+					if (container.value === null) {
+						loadingState = 'loading';
+						container.value = null;
+					}
 					errorMessage = null;
 				} else if (message.status === 'error') {
 					loadingState = 'error';
-					container = null;
+					container.value = null;
 					errorMessage = message.error;
 				} else if (message.status === 'transmitting') {
 					loadingState = 'transmitting';
-					container = message.contents;
+					container.value = message.contents;
 					errorMessage = null;
 				}
 			} catch (err) {
@@ -39,6 +44,9 @@
 
 		eventSource.onerror = (error: Event) => {
 			console.error('EventSource error:', error);
+			eventSource.close();
+			loadingState = 'error';
+			errorMessage = 'Error connecting to server.';
 		};
 
 		return () => {
@@ -76,7 +84,9 @@
 		return entries;
 	}
 
-	$inspect(container);
+	$inspect(loadingState)
+	$inspect(container.value);
+	$inspect(errorMessage);
 </script>
 
 {#if loadingState === 'loading'}
@@ -88,8 +98,8 @@
 	<h1>Container Error</h1>
 	<p>{errorMessage}</p>
 {:else if loadingState === 'transmitting'}
-	{#if container}
-		<h1>{container.Name.replace(/^\//, '')}</h1>
+	{#if container.value}
+		<h1>{container.value.Name.replace(/^\//, '')}</h1>
 		<table>
 			<thead>
 				<tr>
@@ -98,7 +108,7 @@
 				</tr>
 			</thead>
 			<tbody>
-				{#each flattenObject(container) as { key, value } (key)}
+				{#each flattenObject(container.value) as { key, value } (key)}
 					<tr>
 						<td>{key}</td>
 						<td>{value}</td>
