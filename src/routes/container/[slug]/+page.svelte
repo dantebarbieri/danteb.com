@@ -46,8 +46,8 @@
 		};
 	});
 
-	function flattenObject(obj: any, prefix: string = ''): { key: string; value: any }[] {
-		let entries: { key: string; value: any }[] = [];
+	function flattenObject(obj: unknown, prefix: string = ''): { key: string; value: unknown }[] {
+		let entries: { key: string; value: unknown }[] = [];
 
 		if (obj !== null && typeof obj === 'object') {
 			if (Array.isArray(obj)) {

@@ -7,7 +7,9 @@
 	import Spinner from '$lib/Spinner.svelte';
 
 	let containers = localStore<ContainerInfo[]>('containers', []);
-	let loadingState = $state<"loading" | "error" | "transmitting">(containers.value ? "transmitting" : "loading");
+	let loadingState = $state<'loading' | 'error' | 'transmitting'>(
+		containers.value ? 'transmitting' : 'loading'
+	);
 	let errorMessage = $state<string | null>(null);
 
 	let eventSource: EventSource;
