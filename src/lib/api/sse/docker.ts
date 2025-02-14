@@ -14,9 +14,13 @@ interface TransmittingMessage<T> {
 	status: 'transmitting';
 }
 
-type NoDifference = { nodifference: true };
+type NoDifference = { kind: "nodifference" };
 
-type Difference<T> = { nodifference: false; contents: T };
+type Difference<T> = { kind: "difference"; contents: T };
+
+type DifferenceError = { kind: "error"; error: string };
+
+type DifferenceResult<T> = NoDifference | Difference<T> | DifferenceError;
 
 export type Message<T> = ErrorMessage | LoadingMessage | TransmittingMessage<T>;
 
@@ -28,7 +32,7 @@ function send<T>(controller: ReadableStreamDefaultController<string>, message: M
 	controller.enqueue(`data: ${JSON.stringify(message)}\n\n`);
 }
 
-function createSSEStream<T>(pollFn: () => Promise<Difference<T> | NoDifference>, pollInterval = 500): ReadableStream {
+function createSSEStream<T>(pollFn: () => Promise<DifferenceResult<T>>, pollInterval = 500): ReadableStream {
 	let intervalId: NodeJS.Timeout;
 	let cancelled = false;
 
@@ -38,9 +42,27 @@ function createSSEStream<T>(pollFn: () => Promise<Difference<T> | NoDifference>,
 				if (cancelled) return;
 
 				try {
-					const difference = await pollFn();
-					if (!difference.nodifference) {
-						const message: Message<T> = { contents: difference.contents, status: 'transmitting' };
+					const result = await pollFn();
+					if (result.kind === "difference") {
+						const message: Message<T> = { contents: result.contents, status: 'transmitting' };
+						try {
+							send(controller, message);
+						} catch (err) {
+							if (
+								err instanceof TypeError &&
+								(err as unknown as { code: string }).code === 'ERR_INVALID_STATE'
+							) {
+								cancelled = true;
+								clearInterval(intervalId);
+							} else {
+								controller.error(err);
+							}
+						}
+					} else if (result.kind === "error") {
+						const message: Message<T> = {
+							error: result.error,
+							status: 'error'
+						};
 						try {
 							send(controller, message);
 						} catch (err) {
@@ -96,7 +118,7 @@ function createSSEStream<T>(pollFn: () => Promise<Difference<T> | NoDifference>,
 	});
 }
 
-function respondWithStream<T>(pollFn: () => Promise<Difference<T> | NoDifference>, pollInterval = 500): Response {
+function respondWithStream<T>(pollFn: () => Promise<DifferenceResult<T>>, pollInterval = 500): Response {
 	const headers = {
 		'Content-Type': 'text/event-stream',
 		'Cache-Control': 'no-cache',
@@ -118,9 +140,9 @@ export function containersStream(): Response {
 			const containersJSON = JSON.stringify(containers);
 			if (containersJSON !== previousContainersJSON) {
 				previousContainersJSON = containersJSON;
-				return { nodifference: false, contents: containers };
+				return { kind: "difference", contents: containers };
 			}
-			return { nodifference: true };
+			return { kind: "nodifference" };
 		},
 		500
 	);
@@ -131,17 +153,19 @@ export function containerStream(containerId: string): Response {
 	let previousContainerJSON = '';
 
 	return respondWithStream(
-		async (): Promise<Difference<ContainerInspectInfo> | NoDifference> => {
+		async (): Promise<DifferenceResult<ContainerInspectInfo>> => {
 			try {
-				const container = await docker.getContainer(containerId).inspect();
+				const container = await docker.getContainer(containerId).inspect({ abortSignal: AbortSignal.timeout(1000) });
 				const containerJSON = JSON.stringify(container);
 				if (containerJSON !== previousContainerJSON) {
 					previousContainerJSON = containerJSON;
-					return { nodifference: false, contents: container };
+					return { kind: "difference", contents: container };
 				}
-				return { nodifference: true };
+				return { kind: "nodifference" };
 			} catch (err) {
-				console.error(err);
+				if (err instanceof Error && err.name === "TimeoutError") {
+					return { kind: "error", error: err.message };
+				}
 				throw err;
 			}
 		},
