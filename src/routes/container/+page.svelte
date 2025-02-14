@@ -4,7 +4,7 @@
 	import type { Message } from '$lib/api/sse/docker';
 	import { localStore } from '$lib/LocalStore.svelte';
 	import Container from '$lib/Container.svelte';
-	import Spinner from '$lib/Spinner.svelte';
+	import Spinner from '$lib/spinners/GridSpinner.svelte';
 
 	let containers = localStore<ContainerInfo[]>('containers', []);
 	let loadingState = $state<'loading' | 'error' | 'transmitting'>(

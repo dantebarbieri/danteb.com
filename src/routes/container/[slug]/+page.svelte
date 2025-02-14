@@ -3,7 +3,7 @@
 	import type { ContainerInspectInfo } from 'dockerode';
 	import type { Message } from '$lib/api/sse/docker';
 	import { localStore } from '$lib/LocalStore.svelte';
-	import Spinner from '$lib/Spinner.svelte';
+	import Spinner from '$lib/spinners/WindowsSpinner.svelte';
 	import type { PageProps } from './$types';
 
 	let { data }: PageProps = $props();
@@ -29,11 +29,11 @@
 					}
 					errorMessage = null;
 				} else if (message.status === 'error') {
-					loadingState = 'error';
+					// loadingState = 'error';
 					container.value = null;
 					errorMessage = message.error;
 				} else if (message.status === 'transmitting') {
-					loadingState = 'transmitting';
+					// loadingState = 'transmitting';
 					container.value = message.contents;
 					errorMessage = null;
 				}
