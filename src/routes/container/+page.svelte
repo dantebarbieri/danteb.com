@@ -12,12 +12,10 @@
 	);
 	let errorMessage = $state<string | null>(null);
 
-	let eventSource: EventSource;
-
 	let filterQuery = $state('');
 
 	onMount(() => {
-		eventSource = new EventSource('/api/sse/docker');
+		const eventSource = new EventSource('/api/sse/docker');
 
 		eventSource.onmessage = (event: MessageEvent<string>) => {
 			try {

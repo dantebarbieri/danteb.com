@@ -23,7 +23,6 @@
 			now = Date.now();
 		}, 1000);
 
-		// Initialize the SSE connection.
 		const eventSource = new EventSource(`/api/sse/docker/${data.slug}`);
 
 		eventSource.onmessage = (event: MessageEvent<string>) => {
@@ -56,7 +55,6 @@
 			errorMessage = 'Error connecting to server.';
 		};
 
-		// Cleanup both the interval and the SSE connection on unmount.
 		return () => {
 			clearInterval(interval);
 			eventSource.close();
