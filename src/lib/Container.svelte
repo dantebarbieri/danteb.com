@@ -1,27 +1,26 @@
 <script lang="ts">
 	interface Props {
-		slug: string;
 		name: string;
 		state: string;
 		status: string;
 	}
 
-	let { slug, name, state, status }: Props = $props();
+	let { name, state, status }: Props = $props();
 </script>
 
 <article
 	data-health={state}
-	aria-labelledby="name-{slug}"
-	aria-describedby="state-{slug} status-{slug}"
+	aria-labelledby="{name}"
+	aria-describedby="{name}-state {name}-status"
 >
 	<header>
-		<h2 id="name-{slug}">
-			<a href="/container/{slug}" aria-label="View details for {name}">{name}</a>
+		<h2 id="{name}">
+			<a href="/container/{name}" aria-label="View details for {name}">{name}</a>
 		</h2>
-		<label for="state-{slug}">Status:</label>
-		<span id="state-{slug}" aria-live="polite">{state}</span>
+		<label for="{name}-state">Status:</label>
+		<span id="{name}-state" aria-live="polite">{state}</span>
 	</header>
-	<p class="status" id="status-{slug}" aria-live="polite">{status}</p>
+	<p class="status" id="{name}-status" aria-live="polite">{status}</p>
 </article>
 
 <style>

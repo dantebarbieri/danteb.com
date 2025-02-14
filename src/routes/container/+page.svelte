@@ -77,7 +77,6 @@
 						.toLowerCase()
 						.includes(filterQuery.toLowerCase()) ) as container (container.Id)}
 				<Container
-					slug={container.Id}
 					name={container.Names.map((name) => name.replace(/^\//, '')).join(', ')}
 					status={container.Status}
 					state={container.State}

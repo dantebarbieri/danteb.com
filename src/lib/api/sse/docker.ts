@@ -155,11 +155,22 @@ export function containersStream(): Response {
 /**
  * Streams Docker container details for a specific container.
  */
-export function containerStream(containerId: string): Response {
+export function containerStream(containerName: string): Response {
 	const docker = new Docker();
 	let previousContainerJSON = '';
 
+	let containerId: string;
+
 	return respondWithStream(async (): Promise<DifferenceResult<ContainerInspectInfo>> => {
+		if (!containerId) {
+			const containers = await docker.listContainers({ all: true, filters: { name: [containerName] } });
+			const container = containers.find(c => containerName === c.Names.map((name) => name.replace(/^\//, '')).join(', '));
+			if (!container) {
+				return { kind: 'error', error: `Container ${containerName} not found.` };
+			}
+			containerId = container.Id;
+		}
+
 		try {
 			const container = await docker
 				.getContainer(containerId)
