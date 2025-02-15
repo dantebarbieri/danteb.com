@@ -8,13 +8,9 @@
 	let { name, state, status }: Props = $props();
 </script>
 
-<article
-	data-health={state}
-	aria-labelledby="{name}"
-	aria-describedby="{name}-state {name}-status"
->
+<article data-health={state} aria-labelledby={name} aria-describedby="{name}-state {name}-status">
 	<header>
-		<h2 id="{name}">
+		<h2 id={name}>
 			<a href="/container/{name}" aria-label="View details for {name}">{name}</a>
 		</h2>
 		<label for="{name}-state">Status:</label>

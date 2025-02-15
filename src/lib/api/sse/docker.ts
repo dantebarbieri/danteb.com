@@ -122,7 +122,7 @@ function createSSEStream<T>(
  */
 function respondWithStream<T>(
 	pollFn: () => Promise<DifferenceResult<T>>,
-	pollInterval = 500/*ms*/
+	pollInterval = 500 /*ms*/
 ): Response {
 	const headers = {
 		'Content-Type': 'text/event-stream',
@@ -163,8 +163,13 @@ export function containerStream(containerName: string): Response {
 
 	return respondWithStream(async (): Promise<DifferenceResult<ContainerInspectInfo>> => {
 		if (!containerId) {
-			const containers = await docker.listContainers({ all: true, filters: { name: [containerName] } });
-			const container = containers.find(c => containerName === c.Names.map((name) => name.replace(/^\//, '')).join(', '));
+			const containers = await docker.listContainers({
+				all: true,
+				filters: { name: [containerName] }
+			});
+			const container = containers.find(
+				(c) => containerName === c.Names.map((name) => name.replace(/^\//, '')).join(', ')
+			);
 			if (!container) {
 				return { kind: 'error', error: `Container ${containerName} not found.` };
 			}
@@ -174,7 +179,7 @@ export function containerStream(containerName: string): Response {
 		try {
 			const container = await docker
 				.getContainer(containerId)
-				.inspect({ abortSignal: AbortSignal.timeout(1000/*ms*/) });
+				.inspect({ abortSignal: AbortSignal.timeout(1000 /*ms*/) });
 			const containerJSON = JSON.stringify(container);
 			if (containerJSON !== previousContainerJSON) {
 				previousContainerJSON = containerJSON;
