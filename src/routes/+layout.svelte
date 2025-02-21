@@ -28,12 +28,9 @@
 <header>
 	<nav>
 		<a aria-current={page.route.id === '/' ? 'page' : undefined} href="/">home</a>
-		<a aria-current={page.route.id?.startsWith('/container') ? 'page' : undefined} href="/container"
-			>containers</a
-		>
-		<a aria-current={page.route.id?.startsWith('/service') ? 'page' : undefined} href="/service"
-			>services</a
-		>
+		<a aria-current={page.route.id?.startsWith('/service') ? 'page' : undefined} href="/service">
+			services
+		</a>
 	</nav>
 </header>
 
